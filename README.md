@@ -1,5 +1,10 @@
 # devops-netology
 
+## Игнорируемые файлы для Terraform
+
+Все каталоги с именем .terraform. Файлы с именем вида *.tfstate, *.tfstate.*, crash.log, *.tvars, override.tf, override.tf.json, *_override.tf, *_override.tf.json, .terraformrc, terraform.rc в любых каталогах
+
+
 ## Основные стадии разработки нового продукта/функционала
 
 ### 1. Определение требований
@@ -17,8 +22,3 @@
 
 ### 4. Релиз 
 При готовности релиза девопс настраивает и запускает продуктовый экземпляр среды и продукта. Подключает их к процессам мониторинга, логирования, резервного копирования.
-
-
-## Игнорируемые файлы для Terraform
-
-Все каталоги с именем .terraform. Файлы с именем вида *.tfstate, *.tfstate.*, crash.log, *.tvars, override.tf, override.tf.json, *_override.tf, *_override.tf.json, .terraformrc, terraform.rc в любых каталогах
