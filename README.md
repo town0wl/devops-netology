@@ -1,6 +1,7 @@
 # devops-netology
 
-very important fix here
+very important fix here</br>
+and little more
 
 ## Игнорируемые файлы для Terraform
 
