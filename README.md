@@ -1,5 +1,7 @@
 # devops-netology
 
+very important fix here
+
 ## Игнорируемые файлы для Terraform
 
 Все каталоги с именем .terraform. Файлы с именем вида *.tfstate, *.tfstate.*, crash.log, *.tvars, override.tf, override.tf.json, *_override.tf, *_override.tf.json, .terraformrc, terraform.rc в любых каталогах
