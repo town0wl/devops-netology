@@ -1,3 +1,91 @@
+## ДЗ 3.2
+1.\
+$ type -t cd\
+builtin
+
+cd сменяет текущую директирию в shell-сессии. Если бы она не была встроенного типа, пришлось бы дополнительно организовать обмен данными между cd и bash и смену директории в bash на основе полученных данных.
+
+2.\
+grep -с <some_string> <some_file>
+
+3.\
+systemd\
+(/sbin/init -> /lib/systemd/systemd)
+
+4.\
+ls something 2>/dev/pts/1
+
+5.\
+$ cat \<log >newfile
+
+6.\
+Итак, я нахожусь в стороннем PTY(/dev/pts/1) и хочу вывести данные в TTY, который открыт в графическом режиме (/dev/pts/0).\
+echo 12345456 > /dev/pts/0\
+Или я нахожусть в графическом режиме в TTY (/dev/pts/0) и хочу получить данные из стороннего PTY(/dev/pts/1).\
+cat /dev/pts/1\
+При этом часть данных попадает в /dev/pts/0, а часть остается в /dev/pts/1\
+cat /dev/pts/1 | tee /dev/pts/1\
+Дает более интересный эффект - данные дублируются и там, и там, но pts/1 не работает адекватно\
+Или что имелось в виду?
+
+7.\
+bash 5>&1\
+Запускает баш с перенаправлением данных из файлового дескриптора 5 в stdout, а именно в /dev/pts/1.
+
+echo netology > /proc/$$/fd/5\
+Отправим данных в fd 5 и они выведутся в /dev/pts/1.
+
+8.\
+ls log kdsksdklog 3>&2 2>&1 1>&3 | grep --color log\
+log\
+ls: cannot access 'kdsksdklog': No such file or directory
+
+9.\
+/proc/$$/environ содержит переменные окружения, установленные на момент старта процесса. Данные в файле не обновляются при последующих изменениях переменных.\
+cat /proc/$$/environ | tr '\000' '\n'
+
+Аналогичные, но обновляемые, актуальные данные можно получить:\
+env\
+printenv\
+set
+
+10.\
+/proc/\<PID\>/cmdline - полная командная строка запуска процесса или, для зомби процессов, пусто\
+/proc/\<PID\>/exe - символическая ссылка на исполняемый файл процесса
+
+11.\
+SSE4.2
+
+12.\
+tty выводит имя терминала, связанного с stdin. При выполнении команды через SSH терминал не создается. Stdin имеет вид: /proc/2939/fd/0 -> pipe:[84091]
+
+13.\
+\# echo 0 > /proc/sys/kernel/yama/ptrace_scope
+
+$ nc -l 3333\
+^Z\
+[1]+  Stopped                 nc -l 3333
+
+vagrant     2454    1669  0 19:01 pts/1    00:00:00 nc -l 3333
+
+$ disown 2454
+
+vagrant     2454    1669  0 19:01 pts/1    00:00:00 nc -l 3333
+
+(screen) $ reptyr 2454
+
+vagrant     2454    1669  0 19:01 pts/0    00:00:00 nc -l 3333\
+vagrant     2468    2256  0 19:04 pts/2    00:00:00 reptyr 2454
+
+14.\
+sudo echo string > /root/new_file\
+echo string | sudo tee /root/new_file\
+tee выводит stdin в файл и дублирует в stdout\
+При использовании tee файл /root/new_file открывается с правами tee, которая запущена с sudo - с правами root.
+
+
+## ДЗ 3.1
+
 5.
 vagrant_default_xxxxxxxxxxxxx_xxxxx\
 1024 MB RAM\
