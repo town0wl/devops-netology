@@ -1,3 +1,70 @@
+## ДЗ 3.3
+1.\
+stat("/tmp", {st_mode=S_IFDIR|S_ISVTX|0777, st_size=4096, ...}) = 0\
+chdir("/tmp")
+
+2.\
+/usr/share/misc/magic.mgc -> ../../lib/file/magic.mgc
+
+3.\
+ls -l /proc/\<pid>/fd\
+Для дескпритора, связанного с проблемным файлом:\
+\> /proc/\<pid>/fd/\<number>
+
+4.\
+Зомби процессы не занимают CPU, RAM, IO, занимают только строчку в таблице процессов.
+
+5.\
+PID    COMM               FD ERR PATH\
+1      systemd            12   0 /proc/400/cgroup\
+773    vminfo              4   0 /var/run/utmp\
+592    dbus-daemon        -1   2 /usr/local/share/dbus-1/system-services\
+592    dbus-daemon        18   0 /usr/share/dbus-1/system-services\
+592    dbus-daemon        -1   2 /lib/dbus-1/system-services\
+592    dbus-daemon        18   0 /var/lib/snapd/dbus-1/system-services/
+
+6.\
+uname({sysname="Linux", nodename="vagrant", ...}) = 0\
+/proc/sys/kernel/{ostype,hostname,osrelease,version,domainname}\
+       Part of the utsname information is also accessible via\
+       /proc/sys/kernel/{ostype, hostname, osrelease, version,\
+       domainname}.
+
+7.\
+Команды через ; выполняются последовательно как отдельные команды. Через && - последующая команда выполняется при успешном коде завершения первой.\
+&& можно использовать с set -e. При использовании set -e шелл будет закрыт сразу после возврата какой-нибудь командой кода завершения с ошибкой (>0). Но в последовательностях команд с && и || будет учитываться статус только последней команды.
+
+8.\
+set -euxo pipefail\
+Опции -eo pipefail прерывают выполнение скрипта в случае неуспешного кода завершения какой-либо команды, включая команды в пайплайнах, но исключая команды составных команд, следующих за while, until, if, or elif, и непоследние команды в последовательностях && и ||. Опция -u прерывает выполнение скрипта при попытке обращения к неустановленным переменным (но при необходимости можно ${a:-}). Это опции защищают от продолжения выполнения скрипта после непредусмотренной ошибки.\
+-x - выводит каждую команду перед выполнением, но после всех подстановок, что позволяет определить место ошибки.
+
+9.\
+ps -axh -o stat | grep ^S | wc -l\
+S - 59\
+I - 47\
+R - 1\
+Z - 1
+
+D    uninterruptible sleep (usually IO)\
+I    Idle kernel thread\
+R    running or runnable (on run queue)\
+S    interruptible sleep (waiting for an event to complete)\
+T    stopped by job control signal\
+t    stopped by debugger during the tracing\
+W    paging (not valid since the 2.6.xx kernel)\
+X    dead (should never be seen)\
+Z    defunct ("zombie") process, terminated but not reaped by its parent
+
+<    high-priority (not nice to other users)\
+N    low-priority (nice to other users)\
+L    has pages locked into memory (for real-time and custom IO)\
+s    is a session leader\
+l    is multi-threaded (using CLONE_THREAD, like NPTL pthreads do)\
+\+    is in the foreground process group
+
+
+
 ## ДЗ 3.2
 1.\
 $ type -t cd\
