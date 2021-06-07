@@ -1,3 +1,154 @@
+## ДЗ 3.4
+
+1.\
+$ systemctl cat node_exporter\
+\# /etc/systemd/system/node_exporter.service\
+[Unit]\
+Description=Node Exporter\
+Wants=network-online.target\
+After=network-online.target
+
+[Service]\
+User=node_exporter\
+Group=node_exporter\
+Type=simple\
+EnvironmentFile=-/etc/default/node_exporter\
+ExecStart=/opt/node_exp/node_exporter $EXTRA_OPTS
+
+[Install]\
+WantedBy=multi-user.target
+
+$ systemctl status node_exporter\
+● node_exporter.service - Node Exporter\
+     Loaded: loaded (/etc/systemd/system/node_exporter.service; enabled; vendor preset: enabled)\
+     Active: active (running) since Sun 2021-06-06 06:33:25 UTC; 6min ago\
+   Main PID: 783 (node_exporter)\
+      Tasks: 5 (limit: 1072)\
+     Memory: 12.9M\
+     CGroup: /system.slice/node_exporter.service\
+             └─783 /opt/node_exp/node_exporter
+
+Jun 06 06:33:25 vagrant node_exporter[783]: level=info ts=2021-06-06T06:33:25.828Z caller=node_exporter.go:113 collector=thermal_zone\
+Jun 06 06:33:25 vagrant node_exporter[783]: level=info ts=2021-06-06T06:33:25.828Z caller=node_exporter.go:113 collector=time\
+Jun 06 06:33:25 vagrant node_exporter[783]: level=info ts=2021-06-06T06:33:25.828Z caller=node_exporter.go:113 collector=timex\
+Jun 06 06:33:25 vagrant node_exporter[783]: level=info ts=2021-06-06T06:33:25.828Z caller=node_exporter.go:113 collector=udp_queues\
+Jun 06 06:33:25 vagrant node_exporter[783]: level=info ts=2021-06-06T06:33:25.828Z caller=node_exporter.go:113 collector=uname\
+Jun 06 06:33:25 vagrant node_exporter[783]: level=info ts=2021-06-06T06:33:25.828Z caller=node_exporter.go:113 collector=vmstat\
+Jun 06 06:33:25 vagrant node_exporter[783]: level=info ts=2021-06-06T06:33:25.828Z caller=node_exporter.go:113 collector=xfs\
+Jun 06 06:33:25 vagrant node_exporter[783]: level=info ts=2021-06-06T06:33:25.829Z caller=node_exporter.go:113 collector=zfs\
+Jun 06 06:33:25 vagrant node_exporter[783]: level=info ts=2021-06-06T06:33:25.829Z caller=node_exporter.go:195 msg="Listening on" address=:9100\
+Jun 06 06:33:25 vagrant node_exporter[783]: level=info ts=2021-06-06T06:33:25.829Z caller=tls_config.go:191 msg="TLS is disabled." http2=false
+
+2.\
+--collector.uname          Enable the uname collector (default: enabled).    Exposes system information as provided by the uname system call.\
+--collector.time           Enable the time collector (default: enabled).    Exposes the current system time.\
+--collector.cpu.info       Enables metric cpu_info\
+--collector.cpu            Enable the cpu collector (default: enabled).        Exposes CPU statistics\
+--collector.diskstats      Enable the diskstats collector (default: enabled).    Exposes disk I/O statistics.\
+--collector.filesystem     Enable the filesystem collector (default: enabled).    Exposes filesystem statistics, such as disk space used.\
+--collector.loadavg        Enable the loadavg collector (default: enabled).    Exposes load average.\
+--collector.meminfo        Enable the meminfo collector (default: enabled).    Exposes memory statistics.\
+--collector.netclass       Enable the netclass collector (default: enabled).    Exposes network interface info from /sys/class/net/\
+--collector.netdev         Enable the netdev collector (default: enabled).    Exposes network interface statistics such as bytes transferred.\
+Перечисленные коллекторы включены по умолчанию, поэтому можно просто не менять дефолтные опции. Но если нужно отключить сбор остальных метрик, кроме выбранных:\
+--collector.disable-defaults    Set all collectors to disabled by default.
+
+3.\
+cpu - процентная загрузка CPU суммарно (от 0 до 100%)\
+load - загрузка CPU в единицах CPU, усредненнная за 1, 5 и 15 минут\
+disk - суммарная загрузка I/O KiB/s\
+ram - загрузка памяти MiB free/used/cached/buffers\
+swap - MiB free/used\
+network - kilobits/s received/sent суммарно/IP/IPv6\
+processes - системные и суммарно\
+и другие\
+а также разбивки по контекстам, пользователям, состояниям, типам операций, файловым системам, сетевым протоколам, интерфейсам и пр.
+
+4.\
+Да, по наличию строки "Hypervisor detected:" :\
+$ dmesg | grep "Hypervisor detected"\
+[    0.000000] Hypervisor detected: KVM
+
+5.\
+fs.nr_open = 1048576\
+/proc/sys/fs/nr_open содержит значение параметра ядра, ограничивающее максимальное количество файлов, которое может быть открыто процессом.\
+Фактически максимальное количество файлов ограничивается лимитом RLIMIT_NOFILE (который не может превышать fs.nr_open), который можно установить в /etc/security/limits.conf:\
+{\<user>|@\<group>}    {hard|soft|-}    nofile    10000\
+А также временно установить в текущей сессии (на значение не выше текущего hard limit):\
+ulimit -[HS]n 10000
+
+6.\
+\# unshare -f --pid --mount-proc sleep 111111 &\
+\# ps aux | grep sleep\
+root        1927  0.0  0.0   8080   596 pts/0    S    19:28   0:00 unshare -f --pid --mount-proc sleep 111111\
+root        1928  0.0  0.0   8076   596 pts/0    S    19:28   0:00 sleep 111111\
+\# nsenter --target 1928 --pid --mount\
+/# ps aux\
+USER         PID %CPU %MEM    VSZ   RSS TTY      STAT START   TIME COMMAND\
+root           1  0.0  0.0   8076   596 pts/0    S    19:28   0:00 sleep 111111\
+root           2  0.0  0.4   9836  4084 pts/0    S    19:29   0:00 -bash\
+root          11  0.0  0.3  11492  3260 pts/0    R+   19:29   0:00 ps aux\
+/# lsns\
+        NS TYPE   NPROCS PID USER COMMAND\
+4026531835 cgroup      3   1 root sleep 111111\
+4026531837 user        3   1 root sleep 111111\
+4026531838 uts         3   1 root sleep 111111\
+4026531839 ipc         3   1 root sleep 111111\
+4026531992 net         3   1 root sleep 111111\
+4026532188 mnt         3   1 root sleep 111111\
+4026532189 pid         3   1 root sleep 111111\
+/# exit\
+\# lsns\
+        NS TYPE   NPROCS   PID USER            COMMAND\
+4026531835 cgroup    113     1 root            /sbin/init\
+4026531836 pid       112     1 root            /sbin/init\
+4026531837 user      113     1 root            /sbin/init\
+4026531838 uts       111     1 root            /sbin/init\
+4026531839 ipc       113     1 root            /sbin/init\
+4026531840 mnt        99     1 root            /sbin/init\
+4026531860 mnt         1    21 root            kdevtmpfs\
+4026531992 net       113     1 root            /sbin/init\
+4026532162 mnt         1   396 root            /lib/systemd/systemd-udevd\
+4026532163 uts         1   396 root            /lib/systemd/systemd-udevd\
+4026532164 mnt         1   405 systemd-network /lib/systemd/systemd-networkd\
+4026532183 mnt         1   561 systemd-resolve /lib/systemd/systemd-resolved\
+4026532184 mnt         5   787 netdata         /usr/sbin/netdata -D\
+4026532186 mnt         1  1712 root            /usr/libexec/fwupd/fwupd\
+4026532188 mnt         2  1927 root            unshare -f --pid --mount-proc sleep 111111\
+4026532189 pid         1  1928 root            sleep 111111\
+4026532247 uts         1   617 root            /lib/systemd/systemd-logind\
+4026532249 mnt         1   608 root            /usr/sbin/irqbalance --foreground\
+4026532250 mnt         1   617 root            /lib/systemd/systemd-logind
+
+7.\
+:(){ :|:& };:\
+Создание функции, которая вызывает два экземпляра себя в фоне, + ее вызов.
+
+] cgroup: fork rejected by pids controller in /user.slice/user-1000.slice/session-4.scope\
+] cgroup: fork rejected by pids controller in /user.slice/user-1000.slice/session-23.scope
+
+Ограничение максимального количества процессов в cgroup user-1000.slice:\
+$ cat /sys/fs/cgroup/pids/user.slice/user-1000.slice/pids.max\
+2359\
+$ systemctl status user-1000.slice\
+Tasks: 15 (limit: 2359)\
+Можно настроить в файлах конфигурации юнитов systemd в TasksMax:\
+$ systemctl cat user-1000.slice\
+\# /usr/lib/systemd/system/user-.slice.d/10-defaults.conf\
+...\
+[Slice]\
+TasksMax=33%\
+(TasksMax= и DefaultTasksMax= могут быть заданы как число или процент от меньшего из /proc/sys/kernel/pid_max, /proc/sys/kernel/threads-max, /sys/fs/cgroup/pids.max)
+
+Также есть ограничение максимального количества процессов на пользователя RLIMIT_NPROC:\
+$ ulimit -Su\
+3575\
+Если поставить его ниже pids.max, поведение системы при запуске функции будет аналогичным, но без сообщения 'cgroup: fork rejected by pids controller' в dmesg:\
+$ ulimit -Su\
+1234
+
+
+
 ## ДЗ 3.3
 1.\
 stat("/tmp", {st_mode=S_IFDIR|S_ISVTX|0777, st_size=4096, ...}) = 0\
