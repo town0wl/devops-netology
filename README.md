@@ -1,3 +1,24 @@
+## ДЗ 3.2 дополнение
+6.\
+/dev/tty is a special file, representing the terminal for the current process. It is a synonym for the controlling terminal of a process, if any.\
+echo 333 > /dev/tty выводит в текущий терминал, как в графическом режиме, так и без него
+
+/dev/ttyX\
+ps aux | grep tty\
+root         557  0.0  0.0   5784  1732 tty1     Ss+  02:27   0:00 /sbin/agetty -o -p -- \u --noclear tty1 linux\
+root         558  0.5  4.0 877740 81372 tty7     Ssl+ 02:27   0:02 /usr/lib/xorg/Xorg :0 -seat seat0 -auth /var/run/lightdm/root/:0 -nolisten tcp vt7 -novtswitch\
+echo 111 > /dev/tty1 - ничего не выводится\
+echo 777 > /dev/tty7 - ничего не выводится\
+cat /dev/tty1 - ничего не выводится, в том числе если попользоваться графическими приложениями\
+cat /dev/tty7 - ничего не выводится, в том числе если попользоваться графическими приложениями
+
+/dev/ttySX\
+ttyS0-ttyS3 write error: Input/output error\
+в ttyS4 и выше можно вывести, потом прочитать\
+echo 555 > /dev/ttyS4\
+cat /dev/ttyS4
+
+
 ## ДЗ 3.4
 
 1.\
