@@ -7,7 +7,8 @@
 Не могут, так как владелец и права являются атрибутами одного файлового объекта, на который имеется две жесткие ссылки. Уникальным идентификатором для файлового объекта будет inode.
 
 4.
-```root@vagrant:/home/vagrant# fdisk /dev/sdb
+```
+root@vagrant:/home/vagrant# fdisk /dev/sdb
 
 Command (m for help): p
 
