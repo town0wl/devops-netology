@@ -1,3 +1,141 @@
+### ДЗ 3.8
+
+1.
+В графе InActConn учтены все отслеживаемые соединения, которые не находятся в состоянии ESTABLISHED . Так как в режимах DR и туннелирования через директор проходят только пакеты, направленные от клиента к серверу, он не может отследить полноценное завершение TCP-соединения. После выхода из состояния ESTABLISHED соединение добавляется к InActConn на время таймаута.
+
+2.
+```
+boxes = {
+  'client' => '5',
+  'director1' => '11',
+  'director2' => '12',
+  'nginx1' => '21',
+  'nginx2' => '22',
+}
+
+root@client:/home/vagrant# for i in {1..100}; do curl -Is http://172.17.17.10 | grep HTTP; done
+HTTP/1.1 200 OK
+HTTP/1.1 200 OK
+...
+
+root@director1:/home/vagrant# ipvsadm -Ln --stats
+IP Virtual Server version 1.2.1 (size=4096)
+Prot LocalAddress:Port               Conns   InPkts  OutPkts  InBytes OutBytes
+  -> RemoteAddress:Port
+TCP  172.17.17.10:80                   101      606        0    40097        0
+  -> 172.17.17.21:80                    50      300        0    19850        0
+  -> 172.17.17.22:80                    51      306        0    20247        0
+  
+root@director1:/home/vagrant# cat /etc/keepalived/keepalived.conf
+vrrp_instance VI_1 {
+   state MASTER
+   interface eth1
+   virtual_router_id 10
+   priority 100
+   advert_int 10
+   authentication {
+       auth_type PASS
+       auth_pass 1111
+   }
+   virtual_ipaddress {
+      172.17.17.10
+  }
+}
+
+root@director2:/home/vagrant# ipvsadm -Ln --stats
+IP Virtual Server version 1.2.1 (size=4096)
+Prot LocalAddress:Port               Conns   InPkts  OutPkts  InBytes OutBytes
+  -> RemoteAddress:Port
+TCP  172.17.17.10:80                     0        0        0        0        0
+  -> 172.17.17.21:80                     0        0        0        0        0
+  -> 172.17.17.22:80                     0        0        0        0        0
+  
+root@director2:/home/vagrant# cat /etc/keepalived/keepalived.conf
+vrrp_instance VI_1 {
+   state BACKUP
+   interface eth1
+   virtual_router_id 10
+   priority 50
+   advert_int 10
+   authentication {
+       auth_type PASS
+       auth_pass 1111
+   }
+   virtual_ipaddress {
+      172.17.17.10
+  }
+}
+
+root@nginx1:/home/vagrant# sysctl net.ipv4.conf.all.arp_ignore
+ipv4.connet.ipv4.conf.all.arp_ignore = 1
+f.all.arroot@nginx1:/home/vagrant# sysctl net.ipv4.conf.all.arp_announce
+net.ipv4.conf.all.arp_announce = 2
+root@nginx1:/home/vagrant# ip a l lo
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet 172.17.17.10/32 scope global lo:10
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+root@nginx1:/home/vagrant# wc -l /var/log/nginx/access.log
+51 /var/log/nginx/access.log
+
+root@nginx2:/home/vagrant# sysctl net.ipv4.conf.all.arp_ignore
+net.ipv4.conf.all.arp_ignore = 1
+root@nginx2:/home/vagrant# sysctl net.ipv4.conf.all.arp_announce
+net.ipv4.conf.all.arp_announce = 2
+root@nginx2:/home/vagrant# ip a l lo
+1: lo: <LOOPBACK,UP,LOWER_UP> mtu 65536 qdisc noqueue state UNKNOWN group default qlen 1000
+    link/loopback 00:00:00:00:00:00 brd 00:00:00:00:00:00
+    inet 127.0.0.1/8 scope host lo
+       valid_lft forever preferred_lft forever
+    inet 172.17.17.10/32 scope global lo:10
+       valid_lft forever preferred_lft forever
+    inet6 ::1/128 scope host
+       valid_lft forever preferred_lft forever
+root@nginx2:/home/vagrant# wc -l /var/log/nginx/access.log
+52 /var/log/nginx/access.log
+```
+
+Отключим keepalived на Master:
+
+```
+root@director1:/home/vagrant# systemctl stop keepalived
+root@director1:/home/vagrant# systemctl status keepalived
+● keepalived.service - Keepalive Daemon (LVS and VRRP)
+     Loaded: loaded (/lib/systemd/system/keepalived.service; enabled; vendor preset: enabled)
+     Active: inactive (dead) since Sun 2021-07-11 13:54:55 UTC; 7s ago
+    Process: 13846 ExecStart=/usr/sbin/keepalived --dont-fork $DAEMON_ARGS (code=exited, status=0/SUCCESS)
+   Main PID: 13846 (code=exited, status=0/SUCCESS)
+
+root@client:/home/vagrant# for i in {1..100}; do curl -Is http://172.17.17.10 | grep HTTP; done
+HTTP/1.1 200 OK
+HTTP/1.1 200 OK
+...
+
+root@director2:/home/vagrant# ipvsadm -Ln --stats
+IP Virtual Server version 1.2.1 (size=4096)
+Prot LocalAddress:Port               Conns   InPkts  OutPkts  InBytes OutBytes
+  -> RemoteAddress:Port
+TCP  172.17.17.10:80                   100      600        0    39700        0
+  -> 172.17.17.21:80                    50      300        0    19850        0
+  -> 172.17.17.22:80                    50      300        0    19850        0
+  
+root@nginx1:/home/vagrant# wc -l /var/log/nginx/access.log
+101 /var/log/nginx/access.log
+
+root@nginx2:/home/vagrant# wc -l /var/log/nginx/access.log
+102 /var/log/nginx/access.log
+```
+
+3.
+Ответ: 6 (3!).\
+Можно использовать 3 адреса: каждый из директоров будет мастером для одного и вторым приоритетов для другого. Тогда при падении одного условные две трети нагрузки пойдут на один из оставшихся и одна треть - на второй. Две трети от 1.5 Гбит/с это 1 Гбит/с - весь канал, так что могут быть потери.\
+Если использовать 6 адресов со всеми возможными для 3х директоров различными последовательностями приоритетов, то при падении одного директора нагрузка равномерно распредилится на два оставшихся.
+
+
 ### ДЗ 3.7
 
 1.
