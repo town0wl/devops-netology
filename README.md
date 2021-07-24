@@ -1,3 +1,65 @@
+### ДЗ 4.1
+
+1.
+c будет содержать строку 'a+b', так как ей присваивается это значение (a и b не интерпретируются как переменные без знака $)\
+d будет содержать строку '1+2', так как вместо $a и $b подставляются значения переменных\
+e будет содержать 3 - результат выполнения арифметической операции над $a и $b, так как инициируется вызов команды, выполняющей сложение
+
+2.
+В скрипте не предусмотрен выход из цикла. Можно добавить 'else break;' перед 'fi'. Также не помешает sleep между итерациями. Еще можно укорачивать файл, чтобы не забивать место на диске, например, 'tail -n 100 curl.log > curl.log'.
+
+3.
+```
+#!/usr/bin/env bash
+ips=(64.233.164.113 173.194.222.113 87.250.250.242)
+for i in {1..5}
+do
+for ip in ${ips[@]}
+do
+nc -nvz -w 1 ${ip} 80 2>>access80.log || sleep 1
+done
+done
+```
+
+Или конкретный сервис (HTTP, например):
+```
+#!/usr/bin/env bash
+ips=(64.233.164.113 173.194.222.113 87.250.250.242)
+for i in {1..5}
+do
+for ip in ${ips[@]}
+do
+if (curl --connect-timeout 1 http://${ip}:80 1>/dev/null 2>&1)
+then 
+echo "$(date) + ${ip} is accessible" >> access80.log
+sleep 1
+else 
+echo "$(date) - ${ip} is not accessible" >> access80.log
+fi
+done
+done
+```
+
+4.
+```
+#!/usr/bin/env bash
+ips=(64.233.164.113 173.194.222.113 87.250.250.242)
+while true
+do
+for ip in ${ips[@]}
+do
+nc -nvz -w 1 ${ip} 80 2>/dev/null	# curl --connect-timeout 1 http://${ip}:80 1>/dev/null 2>&1
+if (($?))
+then
+echo "$(date) - ${ip} port 80 is not accessible" >> error80.log
+break 2
+fi
+done
+sleep 1
+done
+```
+
+
 ### ДЗ 3.8
 
 1.
