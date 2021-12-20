@@ -1,3 +1,192 @@
+### ДЗ 6.2
+
+1.
+```
+services:
+  postgres:
+    image: "postgres:12"
+    ports:
+      - "5432:5432/tcp"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+      - postgres-backup:/var/lib/postgres-backup
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: main_db
+volumes:
+  postgres-data:
+  postgres-backup:
+```
+  
+2.
+Список БД:
+```
+  datname
+-----------
+ postgres
+ main_db
+ template1
+ template0
+ test_db
+(5 rows)
+```
+
+Описание таблицы orders:
+```
+                                                   Table "public.orders"
+    Column    |  Type   | Collation | Nullable |              Default               | Storage  | Stats target | Description
+--------------+---------+-----------+----------+------------------------------------+----------+--------------+-------------
+ id           | integer |           | not null | nextval('orders_id_seq'::regclass) | plain    |              |
+ наименование | text    |           | not null |                                    | extended |              |
+ цена         | integer |           |          |                                    | plain    |              |
+Indexes:
+    "orders_pkey" PRIMARY KEY, btree (id)
+Referenced by:
+    TABLE "clients" CONSTRAINT "clients_заказ_fkey" FOREIGN KEY ("заказ") REFERENCES orders(id)
+Access method: heap
+```
+	
+Описание таблицы clients:
+```
+                                                      Table "public.clients"
+      Column       |  Type   | Collation | Nullable |               Default               | Storage  | Stats target | Description
+-------------------+---------+-----------+----------+-------------------------------------+----------+--------------+-------------
+ id                | integer |           | not null | nextval('clients_id_seq'::regclass) | plain    |              |
+ фамилия           | text    |           | not null |                                     | extended |              |
+ страна проживания | text    |           | not null |                                     | extended |              |
+ заказ             | integer |           |          |                                     | plain    |              |
+Indexes:
+    "clients_pkey" PRIMARY KEY, btree (id)
+    "clients_lower_idx" btree (lower("страна проживания"))
+Foreign-key constraints:
+    "clients_заказ_fkey" FOREIGN KEY ("заказ") REFERENCES orders(id)
+Access method: heap
+```
+
+Права доступа к таблицам (SQL-запрос и список пользователей с правами):
+```
+test_db=# SELECT table_name, grantee, privilege_type FROM information_schema.role_table_grants WHERE table_name='orders' OR table_name='clients';
+ table_name |     grantee      | privilege_type
+------------+------------------+----------------
+ orders     | user             | INSERT
+ orders     | user             | SELECT
+ orders     | user             | UPDATE
+ orders     | user             | DELETE
+ orders     | user             | TRUNCATE
+ orders     | user             | REFERENCES
+ orders     | user             | TRIGGER
+ orders     | test-simple-user | INSERT
+ orders     | test-simple-user | SELECT
+ orders     | test-simple-user | UPDATE
+ orders     | test-simple-user | DELETE
+ orders     | test-admin-user  | INSERT
+ orders     | test-admin-user  | SELECT
+ orders     | test-admin-user  | UPDATE
+ orders     | test-admin-user  | DELETE
+ orders     | test-admin-user  | TRUNCATE
+ orders     | test-admin-user  | REFERENCES
+ orders     | test-admin-user  | TRIGGER
+ clients    | user             | INSERT
+ clients    | user             | SELECT
+ clients    | user             | UPDATE
+ clients    | user             | DELETE
+ clients    | user             | TRUNCATE
+ clients    | user             | REFERENCES
+ clients    | user             | TRIGGER
+ clients    | test-simple-user | INSERT
+ clients    | test-simple-user | SELECT
+ clients    | test-simple-user | UPDATE
+ clients    | test-simple-user | DELETE
+ clients    | test-admin-user  | INSERT
+ clients    | test-admin-user  | SELECT
+ clients    | test-admin-user  | UPDATE
+ clients    | test-admin-user  | DELETE
+ clients    | test-admin-user  | TRUNCATE
+ clients    | test-admin-user  | REFERENCES
+ clients    | test-admin-user  | TRIGGER
+(36 rows)
+```
+
+3.
+Вариант 1 - точный и медленный:
+```
+test_db=# SELECT count(*) AS exact_count FROM orders;
+ exact_count
+-------------
+           5
+(1 row)
+```
+Вариант 2 - быстрый (если уже выполнен analyze):
+```
+test_db=# analyze clients;  -- or vacuum
+ANALYZE
+test_db=# SELECT (CASE WHEN c.reltuples < 0 THEN NULL       -- never vacuumed
+test_db(#              WHEN c.relpages = 0 THEN float8 '0'  -- empty table
+test_db(#              ELSE c.reltuples / c.relpages END
+test_db(#       * (pg_relation_size(c.oid) / pg_catalog.current_setting('block_size')::int)
+test_db(#        )::bigint as estimate
+test_db-# FROM   pg_class c
+test_db-# WHERE  c.oid = 'public.clients'::regclass;
+ estimate
+----------
+        5
+(1 row)
+```
+
+4.
+```
+update clients set "заказ" = (select id from orders where orders."наименование"='Книга') where clients."фамилия"='Иванов Иван Иванович';
+update clients set "заказ" = (select id from orders where orders."наименование"='Монитор') where clients."фамилия"='Петров Петр Петрович';
+update clients set "заказ" = (select id from orders where orders."наименование"='Гитара') where clients."фамилия"='Иоганн Себастьян Бах';
+
+test_db=# select "фамилия" from clients where "заказ" is not null;
+       фамилия
+----------------------
+ Иванов Иван Иванович
+ Петров Петр Петрович
+ Иоганн Себастьян Бах
+(3 rows)
+```
+
+5.
+```
+test_db=# explain select "фамилия" from clients where "заказ" is not null;
+                       QUERY PLAN
+--------------------------------------------------------
+ Seq Scan on clients  (cost=0.00..1.05 rows=3 width=33)
+   Filter: ("заказ" IS NOT NULL)
+(2 rows)
+
+test_db=# explain analyze select "фамилия" from clients where "заказ" is not null;
+                                            QUERY PLAN
+--------------------------------------------------------------------------------------------------
+ Seq Scan on clients  (cost=0.00..1.05 rows=3 width=33) (actual time=0.018..0.019 rows=3 loops=1)
+   Filter: ("заказ" IS NOT NULL)
+   Rows Removed by Filter: 2
+ Planning Time: 0.102 ms
+ Execution Time: 0.034 ms
+(5 rows)
+```
+
+Запрос будет выполняться с помощью простого последовательного сканирования. Оценка стоимости запуска - 0.00 (затраты до начала вывода данных), оценка общей стоимости выполнения - 1.05.
+Итоговое время выполнения при реальном запуске 0.034 мс.
+
+6.
+Бэкап:
+```
+docker exec -u postgres postgres-postgres-1 bash -c 'PGPASSWORD="$POSTGRES_PASSWORD" pg_dump -U "$POSTGRES_USER" test_db | gzip > /var/lib/postgres-backup/test_db.back.gz'
+docker exec -u postgres postgres-postgres-1 bash -c 'PGPASSWORD="$POSTGRES_PASSWORD" pg_dumpall --globals-only -U "$POSTGRES_USER" | gzip > /var/lib/postgres-backup/db_cluster_data.back.gz'
+```
+Для нового контейнера чистый volume под данные и старый с бэкапами. Восстановление:
+```
+docker exec -u postgres postgres-postgres-1 bash -c 'gunzip -c /var/lib/postgres-backup/db_cluster_data.back.gz | PGPASSWORD="$POSTGRES_PASSWORD" psql -U "$POSTGRES_USER" postgres'
+PGPASSFILE='/home/vagrant/postgres/.pgpass' psql -h 127.0.0.1 -p 5432 -d main_db -U user -c "create database test_db;"
+docker exec -u postgres postgres-postgres-1 bash -c 'gunzip -c /var/lib/postgres-backup/test_db.back.gz | PGPASSWORD="$POSTGRES_PASSWORD" psql -U "$POSTGRES_USER" test_db'
+```
+
+
+
 ### ДЗ 6.5
 
 1.
