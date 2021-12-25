@@ -1,3 +1,43 @@
+### ДЗ 6.4
+
+1.
+```
+\l[+]   [PATTERN]      list databases
+\c[onnect] {[DBNAME|- USER|- HOST|- PORT|-] | conninfo}	connect to new database (currently "main_db")
+\dt[S+] [PATTERN]      list tables
+\d[S+]  NAME           describe table, view, sequence, or index
+\q                     quit psql
+```
+
+2.
+```
+select attname from pg_stats where tablename='orders' and avg_width=(select MAX(avg_width) from pg_stats where tablename='orders')
+
+ attname
+---------
+ title
+(1 row)
+```
+
+3.
+```
+BEGIN;
+create table orders_1 ( check ( price > 499 ) ) inherits (orders);
+create rule send_to_orders_1 as on insert to orders where (price > 499) do instead insert into orders_1 values (new.*);
+create table orders_2 ( check ( price <= 499 ) ) inherits (orders);
+create rule send_to_orders_2 as on insert to orders where (price <= 499) do instead insert into orders_2 values (new.*);
+insert into orders_1 select * from only orders where price > 499;
+insert into orders_2 select * from only orders where price <= 499;
+truncate only orders;
+COMMIT;
+```
+
+Можно сразу создать таблицу секционированной при выполнении CREATE TABLE с параметром PARTITION BY (декларативное партиционирование/секционирование). В таком случае она не будет непосредственно содержать данные, а будет представлять собой консолидацию данных из таблиц-партиций. При этом таблицы-партиции все равно нужно создавать вручную, хотя можно сформировать скрипт для выполнения этой задачи. При таком способе партицирования, начиная с 11й версии, создание индекса на родительской таблице автоматически приводит к созданию индексов для всех существующих и новых партиций, которые будут созданы в будущем.
+
+4.
+Как бы вы доработали бэкап-файл, чтобы добавить уникальность значения столбца title для таблиц test_database? - Пока непонятно, как это сделать. При декларативном секционировании требуется, чтобы ключ секционирования входил в уникальный индекс, но это не подходит, т.к. уникальным должен быть именно 'title'. При наследовании с этим вообще функциональные сложности. Надо использовать триггер?
+
+
 ### ДЗ 6.2
 
 1.
