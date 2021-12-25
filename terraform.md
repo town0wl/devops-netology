@@ -1,3 +1,20 @@
+### ДЗ 7.2
+
+1.
+```
+      Name                    Value             Type    Location
+      ----                    -----             ----    --------
+   profile                <not set>             None    None
+access_key     ****************PAF5              env
+secret_key     ****************EM61              env
+    region               eu-north-1      config-file    ~/.aws/config
+```
+	
+2.
+Packer\
+https://github.com/town0wl/devops-netology/tree/main/terraform
+
+
 ### ДЗ 7.1
 1.
 Будем использовать то, что уже умеем, - Terraform, Packer, Docker, Kubernetes и Teamcity. Этого должно быть достаточно. Если условия сетевой и административной изоляции позволяют, поднимем на уже готовом кластере Kubernetes, но можно и новый запустить.\
