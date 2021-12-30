@@ -6,18 +6,18 @@ package main
 
 import "fmt"
 
-func normalize(foots float64) float64 {
-	return 0.3048 * foots
+func to_international_foots(meters float64) float64 {
+	return meters/0.3048
 }
 
 func main() {
-	fmt.Print("Enter how many foots: ")
+	fmt.Print("Enter how many meters: ")
 	var input float64
 	p, _ := fmt.Scanf("%f", &input)
 	if p == 1 {
-		fmt.Printf("%.4f", normalize(input))
+		fmt.Printf("%.4f", to_international_foots(input))
 	} else {
-		fmt.Println("Some meters")
+		fmt.Println("Some foots")
 	}
 }
 ```
@@ -27,19 +27,20 @@ main_test.go:
 package main
 
 import "testing"
+import "math"
 
-func TestMain(t *testing.T) {
-	v := normalize(0.00)
+func Test_to_international_foots(t *testing.T) {
+	v := to_international_foots(0.00)
 	if v != 0 {
 		t.Error("Expected 0, got ", v)
 	}
-	v = normalize(10000.00)
-	if v != 3048 {
-		t.Error("Expected 3048, got ", v)
+	v = math.Round(to_international_foots(1000.00)*10000) / 10000
+	if v != 3280.8399 {
+		t.Error("Expected 3280.8399, got ", v)
 	}
-	v = normalize(-100.00)
-	if v != -30.48 {
-		t.Error("Expected -30.48, got ", v)
+	v = math.Round(to_international_foots(-100.00)*10000) / 10000
+	if v != -328.0840 {
+		t.Error("Expected -328.0840, got ", v)
 	}
 }
 ```
