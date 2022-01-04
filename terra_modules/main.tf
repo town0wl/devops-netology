@@ -1,3 +1,7 @@
+provider "aws" {
+  region = "eu-north-1"
+}
+
 data "aws_ami" "ubuntu" {
   most_recent = true
   owners = ["099720109477"] # Canonical
@@ -15,12 +19,12 @@ resource "aws_vpc" "test_vpc" {
 resource "aws_subnet" "test_vpc_net11" {
   vpc_id            = aws_vpc.test_vpc.id
   cidr_block        = "192.168.11.0/24"
-  availability_zone = "eu-north-1"
+  availability_zone = "eu-north-1c"
 }
 
 resource "aws_network_interface" "test_vpc_4test1" {
   subnet_id   = aws_subnet.test_vpc_net11.id
-  private_ips = ["192.168.11.1"]
+  private_ips = ["192.168.11.111"]
 }
 
 module "test1" {
@@ -30,9 +34,9 @@ module "test1" {
   ami           = data.aws_ami.ubuntu.id
   instance_type = "t3.micro"
   tags = {
-    Name = "neto-test.1"
+    Label = "neto-test.1"
   }
-  associate_public_ip_address = true
+#  associate_public_ip_address = true		# This will not work because of ec2_instance module restrictions
   hibernation = true
   cpu_core_count = 1
   cpu_threads_per_core = 1
@@ -40,7 +44,7 @@ module "test1" {
   disable_api_termination = true
   ebs_optimized = true
   instance_initiated_shutdown_behavior = "stop"
-  ipv6_address_count = 0
+  ipv6_address_count = 0			# Not working for some reason
   key_name = "aws_test-key"
   monitoring = true
   source_dest_check = true
@@ -52,6 +56,7 @@ module "test1" {
     }
   ]
 
+  enable_volume_tags = false
   root_block_device = [
     {
       encrypted   = false
