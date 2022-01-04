@@ -17,6 +17,6 @@ output "test1_priv_ip" {
   value = module.test1.private_ip
 }
 
-output "test1_subnet_id" {
-  value = module.test1.subnet_id
+output "test1_public_ip" {
+  value = module.test1.public_ip
 }
