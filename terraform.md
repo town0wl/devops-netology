@@ -1,3 +1,57 @@
+### ДЗ 7.4
+1.
+![alt text](https://github.com/town0wl/devops-netology/blob/main/images/terra_cloud_screen.jpg?raw=true)
+
+2.
+server.yaml
+```
+repos:
+- id: /github\.com/town0wl/.*/
+  branch: /main/
+  apply_requirements: [approved, mergeable]
+  workflow: custom
+  allowed_overrides: [workflow]
+  allowed_workflows: [custom]
+  allow_custom_workflows: true
+  delete_source_branch_on_merge: false
+
+workflows:
+  custom:
+    plan:
+      steps:
+      - run: 'echo "plan started"'
+      - init
+      - plan:
+          extra_args: ["-lock=false"]
+    apply:
+      steps:
+      - run: 'echo "apply started"'
+      - apply
+```
+
+atlantis.yaml
+```
+version: 3
+projects:
+- name: for_prod
+  dir: terraform
+  workspace: prod
+  autoplan:
+    when_modified: ["**.tf", "**.tfvars"]
+    enabled: true
+- name: for_stage
+  dir: terraform
+  workspace: stage
+  autoplan:
+    when_modified: ["**.tf", "**.tfvars"]
+    enabled: true
+```
+
+3.
+Модуль состоит из набора переменных, которые просто подставляет в описание создаваемого ресурса aws_instance. А также формирует ряд output для параметров создаваемого инстанса, но только для одного (первого), если их создается несколько. Модуль не вносит дополнительной функциональности по сравнению с обычным созданием ресурса aws_instance, даже если создается несколько ресурсов, поэтому его прямое использование не оправдано. Но может быть использован как заготовка для создания собственного кастомизированного модуля.\
+https://github.com/town0wl/devops-netology/tree/main/terra_modules
+
+
 ### ДЗ 7.3
 ```
 terraform workspace list
