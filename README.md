@@ -1,3 +1,124 @@
+### ДЗ 5.4
+
+1.
+```
+FROM archlinux:latest
+
+RUN pacman --noconfirm -Sy && \
+    pacman -S --needed --noconfirm base-devel git && \
+    pacman -S --needed --noconfirm python3
+
+RUN useradd -m -d /opt/pony pony
+
+USER pony
+WORKDIR /opt/pony
+RUN curl -L -O https://aur.archlinux.org/cgit/aur.git/snapshot/ponysay-git.tar.gz && \
+    tar -xvf ponysay-git.tar.gz && \
+    cd ponysay-git && \
+    makepkg
+
+USER root
+RUN cd ponysay-git && pacman --noconfirm -U ponysay-git-3.0.3+34-1-any.pkg.tar.zst && rm -R *
+
+USER pony
+
+ENTRYPOINT ["/usr/bin/ponysay"]
+CMD ["wow some obscurantism"]
+```
+
+![alt text](https://github.com/town0wl/devops-netology/blob/main/images/pony.jpg?raw=true)
+
+https://hub.docker.com/layers/town0wl/netology-repo/arch_pony/images/sha256-0822db4171da842a44fcd860428e1f42b9eb1731f63aaafed7d4a4f3c477b781
+
+
+2.
+Dockerfile для amazoncorreto:
+```
+FROM amazoncorretto:8
+
+RUN for iter in {1..10}; do \
+    yum update --setopt=tsflags=nodocs -y && \
+    yum install --setopt=tsflags=nodocs -y \
+    wget \
+    && yum clean all && \
+    exit_code=0 && break || exit_code=$? && echo "yum error: retry $iter in 10s" && sleep 10; \
+    done;
+	
+RUN wget -O /etc/yum.repos.d/jenkins.repo https://pkg.jenkins.io/redhat-stable/jenkins.repo && \
+    rpm --import https://pkg.jenkins.io/redhat-stable/jenkins.io.key && \
+    amazon-linux-extras install epel -y && \
+    yum update --setopt=tsflags=nodocs -y && \
+    yum install --setopt=tsflags=nodocs -y \
+    jenkins \
+    && yum clean all
+
+EXPOSE 8080
+VOLUME ["/root/.jenkins/secrets/initialAdminPassword"]
+CMD exec java -jar /usr/lib/jenkins/jenkins.war
+```
+
+![alt text](https://github.com/town0wl/devops-netology/blob/main/images/logs_1.jpg?raw=true)
+
+![alt text](https://github.com/town0wl/devops-netology/blob/main/images/jenkins_1.jpg?raw=true)
+
+https://hub.docker.com/layers/town0wl/netology-repo/jenkins-ver1/images/sha256-6c040e0511fdcd946592add24bb2eeec12fc7a5d49e6f846f3323a60cdb44866?context=explore
+
+Dockerfile для ubuntu:
+```
+FROM ubuntu:latest
+
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
+    ca-certificates \
+    curl \
+    openjdk-11-jdk \
+    && rm -rf /var/lib/apt/lists/* && \
+    java -version
+
+RUN curl -fsSL https://pkg.jenkins.io/debian-stable/jenkins.io.key > /usr/share/keyrings/jenkins-keyring.asc && \
+    echo deb [signed-by=/usr/share/keyrings/jenkins-keyring.asc] \
+    https://pkg.jenkins.io/debian-stable binary/ | tee \
+    /etc/apt/sources.list.d/jenkins.list > /dev/null && \
+    apt-get update && \
+    apt-get install -y --no-install-recommends \
+    jenkins \
+    && rm -rf /var/lib/apt/lists/*
+
+EXPOSE 8080
+VOLUME ["/root/.jenkins/secrets/initialAdminPassword"]
+CMD exec java -jar /usr/share/jenkins/jenkins.war
+```
+
+![alt text](https://github.com/town0wl/devops-netology/blob/main/images/logs_2.jpg?raw=true)
+
+![alt text](https://github.com/town0wl/devops-netology/blob/main/images/jenkins_2.jpg?raw=true)
+
+https://hub.docker.com/layers/town0wl/netology-repo/jenkins-ver2/images/sha256-09a5d9b5a63d4a2a9d6258676f88c9c7d46b9fafd369fc8cc811259cd131def7?context=explore
+
+3.
+Наполнение Dockerfile с npm приложением:
+```
+FROM node:17.3-alpine
+
+RUN wget -q -O /opt/master.zip https://github.com/simplicitesoftware/nodejs-demo/archive/refs/heads/master.zip && \
+    unzip /opt/master.zip -d /opt/ && \
+    rm /opt/master.zip
+	
+WORKDIR /opt/nodejs-demo-master
+
+RUN npm install --silent && \
+    npm install serve --silent
+
+ENTRYPOINT ["npx", "serve"]
+CMD ["-p", "3000"]
+```
+
+Скриншот вывода вызова команды списка docker сетей:\
+![alt text](https://github.com/town0wl/devops-netology/blob/main/images/nets.jpg?raw=true)
+
+Скриншот вызова утилиты curl с успешным ответом:\
+![alt text](https://github.com/town0wl/devops-netology/blob/main/images/curl.jpg?raw=true)
+
 ### ДЗ 6.4
 
 1.
