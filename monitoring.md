@@ -1,3 +1,38 @@
+### ДЗ 10.3
+
+1.
+![alt text](https://github.com/town0wl/devops-netology/blob/main/data_sources.jpg?raw=true)
+
+2.
+Утилизация CPU для nodeexporter (в процентах, 100-idle):
+```
+100 - (avg by (instance) (rate(node_cpu_seconds_total{instance="$host",mode="idle"}[20s]))*100)
+```
+CPULA 1/5/15:
+```
+100 - (avg by (instance) (rate(node_cpu_seconds_total{instance="$host",mode="idle"}[1m]))*100)
+100 - (avg by (instance) (rate(node_cpu_seconds_total{instance="$host",mode="idle"}[5m]))*100)
+100 - (avg by (instance) (rate(node_cpu_seconds_total{instance="$host",mode="idle"}[15m]))*100)
+```
+Количество свободной оперативной памяти:
+```
+node_memory_MemFree_bytes{instance="$host"}
+```
+Количество места на файловой системе:
+```
+node_filesystem_avail_bytes{instance="$host",mountpoint="/"}
+```
+![alt text](https://github.com/town0wl/devops-netology/blob/main/dashboard.jpg?raw=true)
+
+3.
+С алертами:  
+![alt text](https://github.com/town0wl/devops-netology/blob/main/alerts.jpg?raw=true)
+
+4.
+https://github.com/town0wl/devops-netology/blob/main/netoboard.json
+
+
+
 ### ДЗ 10.2
 
 1.  
