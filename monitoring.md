@@ -1,3 +1,14 @@
+### ДЗ 10.4
+
+1.
+![alt text](https://github.com/town0wl/devops-netology/blob/main/containers.jpg?raw=true)  
+![alt text](https://github.com/town0wl/devops-netology/blob/main/kibana.jpg?raw=true)  
+
+2.
+![alt text](https://github.com/town0wl/devops-netology/blob/main/indices.jpg?raw=true)  
+![alt text](https://github.com/town0wl/devops-netology/blob/main/logs.jpg?raw=true)  
+![alt text](https://github.com/town0wl/devops-netology/blob/main/logs2.jpg?raw=true)
+
 ### ДЗ 10.3
 
 1.
