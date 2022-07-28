@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: prod-back-deploy
+  name: prod-back
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: prod-back-pods
+  template:
+    metadata:
+      labels:
+        app: prod-back-pods
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - image: town0wl/netology-repo:backend
+        imagePullPolicy: IfNotPresent
+        name: backend
+        resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        ports:
+          - containerPort: 9000
+        envFrom:
+        - secretRef:
+            name: back-prod-secrets

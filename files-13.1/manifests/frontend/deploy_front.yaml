@@ -1,0 +1,33 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  labels:
+    app: prod-front-deploy
+  name: prod-front
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: prod-front-pods
+  template:
+    metadata:
+      labels:
+        app: prod-front-pods
+    spec:
+      automountServiceAccountToken: false
+      containers:
+      - image: town0wl/netology-repo:frontend
+        imagePullPolicy: IfNotPresent
+        name: frontend
+        resources:
+          limits:
+            cpu: 200m
+            memory: 512Mi
+          requests:
+            cpu: 100m
+            memory: 256Mi
+        ports:
+          - containerPort: 80
+        env:
+          - name: BASE_URL
+            value: "http://back-srv:9000"

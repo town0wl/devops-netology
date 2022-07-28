@@ -1,0 +1,34 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: ss-postgres
+  labels:
+    app: postgres-prod
+spec:
+  serviceName: db
+  replicas: 1
+  selector:
+    matchLabels:
+      app: postgres-prod
+  template:
+    metadata:
+      labels:
+        app: postgres-prod
+    spec:
+      serviceAccountName: postgres-prod-sa
+      automountServiceAccountToken: false
+      containers:
+      - name: postgres
+        image: postgres:12-alpine
+        envFrom:
+        - secretRef:
+            name: postgres-prod-secrets
+        ports:
+        - containerPort: 5432
+        volumeMounts:
+        - name: postgres-data
+          mountPath: /var/lib/postgresql/data
+      volumes:
+      - name: postgres-data
+        persistentVolumeClaim:
+          claimName: pvc-postgres-prod
